@@ -9,9 +9,16 @@ Parts:
 * [FrSky X8R](https://www.frsky-rc.com/product/x8r/) receiver (RX).
 * [Eachine TX805](https://www.eachine.com/Eachine-TX805-5_8G-40CH-25-or-200-or-600-or-800mW-FPV-Transmitter-TX-LED-Display-Support-OSD-or-Pitmode-or-Smart-Audio-RP-SMA-Female-p-1234.html) video transmitter (VTX).
 * [Eachine 1000TVL](https://www.eachine.com/Eachine-1000TVL-1-3-CCD-110-Degree-2.8mm-Lens-Mini-FPV-Camera-NTSC-PAL-Switchable-p-357.html) FPV camera.
-* [12V power supply](https://www.reichelt.com/de/en/eco-friendly-plug-in-power-supply-unit-12-v-1500-ma-2-5-mm-snt-1500-12v-2-5-p108993.html).
+* [12V power supply](https://www.reichelt.com/de/en/eco-friendly-plug-in-power-supply-unit-12-v-1500-ma-2-5-mm-snt-1500-12v-2-5-p108993.html) (plus barrel jack to terminal block [adapter](https://www.adafruit.com/product/368)).
 
-All the work below was done using a computer running Ubuntu but it should be easy enough to adapt things for Mac or Windows.
+All the work below was done using a computer running Ubuntu, but it should be easy enough to adapt things for Mac or Windows.
+
+Wiring
+------
+
+![wiring with Fritzing](wiring-fritzing.png)
+
+![wiring photo](wiring-photo.jpg)
 
 Setting up the Nucleo board
 ---------------------------
@@ -22,7 +29,7 @@ Aside: Oddly, the two USB connectors use different components - the one on the S
 
 Plug a USB cable into the ST-LINK connector (plugging it into the other one does nothing due to the default jumper settings) - it appears as a USB drive.
 
-The board comes with a pre-installed example application that will flash the red user LED madly, press the button labeled _USER_ to get it to cycle thru the other user LEDs.
+The board comes with a pre-installed example application that will flash the red user LED madly, press the button labeled _USER_ to get it to cycle through the other user LEDs.
 
 ### Update the ST-LINK firmware
 
@@ -153,7 +160,7 @@ The Configurator ends up in `/opt/betaflight/betaflight-configurator`:
     /opt/betaflight/betaflight-configurator/betaflight-configurator
     ...
 
-So far we've been communicating with the board via the USB connector on ST-LINK subboard. However, the Configurator needs to communicates with the board via the other USB connector. So keep the board powered via the ST-LINK and plug in another USB cable to the second USB connector.
+So far we've been communicating with the board via the USB connector on ST-LINK subboard. However, the Configurator needs to communicate with the board via the other USB connector. So keep the board powered via the ST-LINK and plug in another USB cable to the second USB connector.
 
 The [_Notes_](#notes) section covers creating a `udev` rule for this second USB connector. Assuming you've got it set up such that you don't need to use `sudo` to access it, you can start the Configurator:
 
@@ -183,7 +190,7 @@ Now, we're going to start wiring things up to the Nucleo board. To do this we ne
 
 Unfortunately there don't seem to be any really nice pinout diagrams for the board, the best is the one that you can find in the user manual that you can download from the [documentation section](https://www.st.com/en/evaluation-tools/nucleo-f722ze.html#documentation) of the board's page on the ST site. The diagram in the _Hardware layout and configuration_ section of the manual is just the same as the one that comes with the board's blister pack.
 
-The silkscreen on the board itself isn't very helpful as the pins are layed out to be very similar to the Arduino UNO headers and given names that correspond to the pin names on the UNO rather than their real STM32 names.
+The silkscreen on the board itself isn't very helpful as the pins are laid out to be very similar to the Arduino UNO headers and given names that correspond to the pin names on the UNO rather than their real STM32 names.
 
 Initially, I referred to some pins here by their silkscreened names but this turns out to be very confusing. E.g. the silkscreened A0 corresponds to the similarly positioned A0 on an Arduino UNO. However, the STM32 also has an A0 pin (referred to as PA0 in the Nucleo manual and as A00 within Betaflight Configurator) that is totally unrelated to this silkscreened pin A0.
 
@@ -204,7 +211,7 @@ Now we know where the UART2 RX pin is - let's use it to connect the RX to the bo
 
 Connect the ground and power pins of the RX's S.BUS port to the 5V and GND pins on the CN8 header and connect the S.BUS signal pin to PD6.
 
-Note: the RX takes 5V and the VRX takes 12V but all signal pins on both are 3.3V safe.
+Note: the RX takes 5V and the VTX takes 12V but all signal pins on both are 3.3V safe.
 
 In the Configurator, go to the _Ports_ tab and click the _UART2_ _Serial RX_ toggle to on. All other settings for _UART2_ should be left unchanged, e.g. the _Configuration/MSP_ toggle should be left unselected, i.e. off.
 
@@ -212,7 +219,7 @@ In the Configurator, go to the _Ports_ tab and click the _UART2_ _Serial RX_ tog
 
 Click _Save and Reboot_. Once you've reconnected, go to the _Configuration_ tab and under _Other Features_ select _Telemetry_ and click _Save and Reboot_ again.
 
-Aside: according to some sources, you shouldn't need to save and reboot twice but it's unclear to me if it always remembers unsaved changes from one tab when you switch to another.
+Aside: according to some sources, you shouldn't need to save and reboot twice, but it's unclear to me if it always remembers unsaved changes from one tab when you switch to another.
 
 **Credit:** these instructions are derived from Oscar Liang's instructions for the F3 [here](https://oscarliang.com/sbus-smartport-telemetry-naze32).
 
@@ -249,7 +256,7 @@ In Configurator, go to the CLI and:
 
 The pins suggested for stealing in Oscar's [guide](https://oscarliang.com/betaflight-resource-remapping/) are `LED_STRIP`, `PPM` and spare motor outputs. There's no `LED_STRIP` resource for this board so let's use the last motor output, i.e. `MOTOR 6` (not that we're intending to ever use 1 to 5).
 
-First free it (this isn't really necessary but it stops Betaflight complaining when we reassign the pin next):
+First free it (this isn't really necessary, but it stops Betaflight complaining when we reassign the pin next):
 
     # resource MOTOR 6 none
     Resource is freed
@@ -260,13 +267,13 @@ And assign it to SoftSerial and save:
     Resource is set to B04
     # save
 
-Note: SoftSerial port number starts from 11, `SERIAL_TX 11` being Softserial #1 and 12 being Softserial #2.
+Note: SoftSerial port number starts from 11, `SERIAL_TX 11` being SoftSerial #1 and 12 being SoftSerial #2.
 
 Once it has rebooted and you've reconnected go to the _Configuration_ tab and under _Other Features_ turn on _SOFTSERIAL_.
 
 After _Save and Reboot_ go to ports and _SOFTSERIAL1_ should now be there (if not go to the `tlm_halfduplex` section of Oscar's guide, at this stage, I'm not sure if I had to actively change anything related to this).
 
-TODO: reset are parameters and re-setup Softserial and see if `tlm_halfduplex` is relevant - I doubt it.
+TODO: reset are parameters and re-setup SoftSerial and see if `tlm_halfduplex` is relevant - I doubt it.
 
 Now, set the _Telemetry Output_ value for _SOFTSERIAL1_ to _SmartPort_ and _Save and Reboot_.
 
@@ -284,7 +291,7 @@ After a lot of experimenting, I finally got telemetry working by going to the _C
 
 After this, I could go to the _TELEMETRY_ page for my model, on the transmitter, and select _Discover new sensors_. In addition to RSSI and RxBt (which come directly from the RX and are available even if telemetry hasn't been set up as described above), it discovered an array of additional sensors - i.e. all those listed [here](https://github.com/betaflight/betaflight/blob/master/docs/Telemetry.md#available-sensors) for Betaflight.
 
-Note: the setting `tlm_inverted` seems a little confusing. The S.PORT signal is an inverted serial signal and F3 and F7 STM32 MPUs can handle this inversion but MPUs like the F4 require and external inverter. So `tlm_inverted` is not abou the inverted nature of the underlying S.PORT signal but about whether it has been inverted again (to become uninverted) by an external inverter. For this F7 based board an external inverter is unnecessary so `tlm_inverted` is set to `OFF`.
+Note: the setting `tlm_inverted` seems a little confusing. The S.PORT signal is an inverted serial signal and F3 and F7 STM32 MPUs can handle this inversion but MPUs like the F4 require and external inverter. So `tlm_inverted` is not about the inverted nature of the underlying S.PORT signal but about whether it has been inverted again (to become uninverted) by an external inverter. For this F7 based board an external inverter is unnecessary so `tlm_inverted` is set to `OFF`.
 
 Hardware UART pins
 ------------------
@@ -295,15 +302,15 @@ You don't appear to have much (any?) freedom to assign pins to UARTs (as e.g. yo
 
 In `target.h` various pins are assigned to UARTs 5, 6, 7 and 8 but those UARTs are not actually enabled.
 
-Of the pins assigned to those UARTs, only pins PE8 (TX) and PE7 (RX) of UART7 and pin PE0 (RX) of UART8 are actually pins exposed via the Nucleo header..
+Of the pins assigned to those UARTs, only pins PE8 (TX) and PE7 (RX) of UART7 and pin PE0 (RX) of UART8 are actually pins exposed via the Nucleo header.
 
 Of the UARTs that are actually enabled, i.e. UART2, UART3 and UART4, only pins PD6 (RX) and PD5 (TX) of UART2 and pin PA0 (TX) of UART4 are exposed.
 
-I could use UART4 (with pin PA0) for _SmartPort_ telemetry but I could not e.g. use PE8 by reassigning it to UART3. This _may_ be because UART3 is used for ST-LINK (search for _USART3_ in the F722ZE manual) - this assumes there's some connection between Betaflight's UART numbering and the devices of the MPU but I don't believe there is.
+I could use UART4 (with pin PA0) for _SmartPort_ telemetry, but I could not e.g. use PE8 by reassigning it to UART3. This _may_ be because UART3 is used for ST-LINK (search for _USART3_ in the F722ZE manual) - this assumes there's some connection between Betaflight's UART numbering and the devices of the MPU but I don't believe there is.
 
 I also tried reassigning UART4 TX to other pins but this didn't work either.
 
-In the manual's _Hardware layout and configuration_ section for the F722ZE, the pins PD6 and PD5 are described as being the RX and TX pins of _USART_2_ and indeed are used as the RX and TX pins of of UART 2 in `target.h`.
+In the manual's _Hardware layout and configuration_ section for the F722ZE, the pins PD6 and PD5 are described as being the RX and TX pins of _USART_2_ and indeed are used as the RX and TX pins of UART 2 in `target.h`.
 
 However, the only other pins described as _USART_ pins are PG14 (TX) and PG9 (RX) for _USART6_ (notice the inconsistent naming _USART_2_ vs _USART6_) and these pins are out of bounds to the Betaflight CLI as it doesn't recognise pin names about F15.
 
@@ -311,7 +318,7 @@ The PA0 pin, i.e. UART4 TX, is not described as a UART pin in the F722ZE manual 
 
 So one might imagine that a pin with a similar name and function, e.g. PB0 (with signal name `TIMER_D_PWM1` and function `TIM3_CH3`), could be substituted for PA0 but it cannot. Neither can PE9 (`TIMER_A_PWM1` and `TIM1_CH1`) nor PE8 (assigned to UART7 TX in `target.h`).
 
-I tried reassigning PA0 to UART3 but it doesn't work there. And I tried assigning it to SoftSerial (replacing B04 used above) and that didn't work there either.
+I tried reassigning PA0 to UART3, but it doesn't work there. And I tried assigning it to SoftSerial (replacing B04 used above) and that didn't work there either.
 
 One might imagine that despite seeming to be able to set `resource` values for UARTs via the CLI that this doesn't actually change anything. However, this is not the case - changes to UART pins via `resource` do affect things, e.g. if you assign PA0 to UART3 but leave _SmartPort_ set for UART4 (and nothing set for UART3), it's not the case that things keep on working, i.e. it's not that under the covers UART4 is still really using PA0 as if it hadn't been reassigned to UART3.
 
@@ -343,7 +350,7 @@ Note: the VTX defaulted to outputting at 600mW (blue LED on). At this power leve
 
 I connected the _Video_, _GND_, _5V Cam_ and _SmartAudio_ wires to a small piece of male header and plugged it into the breadboard. Then, via the breadboard, I connected the video signal from the camera to the _Video_ pin of the VTX.
 
-Aside: with a proper flight controller, you'd connect the video pin of the camera to the flight controller and then connect the flight controller to the VTX - this would allow the flight controlled to overlay what's called an OSD (on-screen display) onto the video signal. However, the Nucleo board has no OSD hardware so it cannot do this.
+Aside: with a proper flight controller, you'd connect the video pin of the camera to the flight controller and then connect the flight controller to the VTX - this would allow the flight controlled to overlay what's called an OSD (on-screen display) onto the video signal. However, the Nucleo board has no OSD hardware, so it cannot do this.
 
 Then (after restoring telemetry to SoftSerial pin PB4) I connected the SmartAudio pin on the VTX to pin PA0 on the Nucleo board, i.e. the UART4 TX pin. And I connected the _GND_ pin (beside _5V Cam_) to a ground pin on the Nucleo board - conveniently there's one just above the PA0 pin.
 
@@ -351,7 +358,7 @@ Then (after restoring telemetry to SoftSerial pin PB4) I connected the SmartAudi
 
 Then, once things were wired up, I followed Oscar Liang's [guide](https://oscarliang.com/vtx-control/) and set things up in the Configurator:
 
-* Under the _Ports_ tab, I set the _Perpherals_ drop down for _UART4_ to _VTX (TBS SmartAudio)_ (and clicked _Save and Reboot_).
+* Under the _Ports_ tab, I set the _Peripherals_ drop down for _UART4_ to _VTX (TBS SmartAudio)_ (and clicked _Save and Reboot_).
 * Under the _Other Features_ section of the _Configuration_ tab, I toggled _OSD_ to on (and clicked _Save and Reboot_).
 
 The second step proved pointless - as mentioned above the OSD depends on the video signal being routed via a flight controller that has the necessary OSD hardware.
@@ -378,7 +385,7 @@ I reduced the number of bands to 5 (and then pressed _Save_) to knock out the I 
 
 Note: Oscar Liang sets up the VTX table using the CLI - I don't see the point in doing this as the file based approach works well.
 
-Aside: under _Video Transmitter_ tab, you can select _Save LUA Scipt_ which saves a file, that describes the frequence table, that can apparently be loaded into OpenTX. However, I don't know why you would do this as the Betaflight script on the transmitter can download this table from the flight controller via the RX using the MSP protocol.
+Aside: under _Video Transmitter_ tab, you can select _Save LUA Script_ which saves a file, that describes the frequencies table, and can, apparently, be loaded into OpenTX. However, I don't know why you would do this as the Betaflight script on the transmitter can download this table from the flight controller via the RX using the MSP protocol.
 
 Now one can control the VTX via the _Selected Mode_ section of the _Video Transmitter_ tab. E.g. select band _BOSCAM_A_, channel _Channel 1_ and power _25_ and press _Save_ and you'll see the LEDs change accordingly on the VTX.
 
@@ -394,7 +401,7 @@ Assuming you've got your transmitter and receiver upgraded to the latest OpenTX 
     $ unzip betaflight-tx-lua-scripts_1.5.0.zip 
     $ cd obj
     $ cp -r * /media/$USER/OPENTX
-    $ ls /media/ghawkins/OPENTX/SCRIPTS/TOOLS
+    $ ls /media/$USER/OPENTX/SCRIPTS/TOOLS
     bf.lua ...
 
 If `bf.lua` is there, as shown, then all is good.
@@ -422,13 +429,20 @@ The menu items of the popup are:
 
 Note: once upon a time it was possible to configure things such that one could interact with the Betaflight script via the OpenTX telemetry screens and this is covered in many existing tutorials. This in no longer possible - you can only access it now via the _TOOLS_ page (as just described) - for more details see issue [#306](https://github.com/betaflight/betaflight-tx-lua-scripts/pull/306). This change came with version 1.5.0 (released in May 2020) of the scripts.
 
-Now everything is set up, you can change _Band_ etc. under _VTX Settings_. As already noted, your changes only come into affect when you long press _ENTER_ and select _save page_. You can change everything except the _Protocol_ value (which is set to _SA_, i.e. SmartAudio).
+Now everything is set up, you can change _Band_ etc. under _VTX Settings_. As already noted, your changes only come into effect when you long press _ENTER_ and select _save page_. You can change everything except the _Protocol_ value (which is set to _SA_, i.e. SmartAudio).
 
-Aside: once this is all set up, one essentially gives up the ability to configure the VTX by its push button. You can still change VTX settings via the pushbutton but then, in OpenTX, if you press _reload_ via the _function menu_, nothing changes. And if you reboot the flight controller it will restore the settings on the VTX to those seen under _VTX Settings_. So it seems that while there is two way communication between the flight controller and the the transmitter, the flight controller only sets values for the VTX but doesn't try to read them. As we saw above, we can read the Smart Audio version from the VTX so there does seem to be two way communication between the flight controller and the VTX - but the flight controller simply doesn't use this capability to update its values, for band etc., to values set via the VTX.
+Aside: once this is all set up, one essentially gives up the ability to configure the VTX by its push button. You can still change VTX settings via the push-button but then, in OpenTX, if you press _reload_ via the _function menu_, nothing changes. And if you reboot the flight controller it will restore the settings on the VTX to those seen under _VTX Settings_. So it seems that while there is two-way communication between the flight controller and the transmitter, the flight controller only sets values for the VTX but doesn't try to read them. As we saw above, we can read the Smart Audio version from the VTX so there does seem to be two-way communication between the flight controller and the VTX - but the flight controller simply doesn't use this capability to update its values, for band etc., to values set via the VTX.
 
 Note: if you're on the Configurator _Video Transmitter_ tab and you change the settings via OpenTX then you have to switch to another Configurator tab and then back to _Video Transmitter_ to force it to load the changes, there's no equivalent of the OpenTX _reload_ menu option in Configurator.
 
-See the [_Notes](#notes) for a discussion of pit mode, i.e. the ultra-low power mode that's below even 25mW.
+See the [_Notes_](#notes) for a discussion of pit mode, i.e. the ultra-low power mode that's below even 25mW.
+
+X8R ports
+---------
+
+For this setup, we're just interested in the S.PORT and the S.BUS ports. You can see the plus, minus and signal pins shown in the little graphic for each port on the top of the RX.
+
+![X8R ports](X8R-ports.svg)
 
 TX805 manual
 ------------
@@ -497,7 +511,7 @@ That's it - nothing needs to be restarted or informed about these changes - they
 
 ### GNU Arm Embedded Toolchain
 
-Many older tutorials on ARM development under cover adding an additional PPA in order to install `gcc-arm-none-eabi`.
+Many older tutorials on ARM development cover adding an additional PPA in order to install `gcc-arm-none-eabi`.
 
 Originally, the latest version of `gcc-arm-none-eabi` was released via a PPA maintained by [Terry Guo](https://launchpad.net/~terry.guo).
 
@@ -535,7 +549,7 @@ If I adjust the band on the VTX then I see the following _Debug 1_ values depend
 * Band = 4, Debug 1 = 31
 * Band = 5, Debug 1 = 39
 
-Changing the channel should have changed the output of _Debug 2_ but it seemed to stay stuck at just one value.
+Changing the channel should have changed the output of _Debug 2_, but it seemed to stay stuck at just one value.
 
 ### Retrieving values via the Betaflight CLI
 
