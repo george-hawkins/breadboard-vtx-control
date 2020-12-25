@@ -37,6 +37,8 @@ The board comes with a pre-installed example application that will flash the red
 
 Find the latest ST-LINK updater under the [products section](https://www.st.com/en/development-tools/stm32-programmers.html#products) of STM32 Programmers page. At the time of writing, it was [STWS-LINK007](https://www.st.com/en/development-tools/stsw-link007.html).
 
+Aside: ST's package naming is quite odd, e.g. at the present time STWS-LINK007 is a package for updating the firmware of an ST-LINK device while STSW-LINK009, which sounds like a more recent revision of the same, is in fact a package for the USB drivers needed by Windows to work with an ST-LINK device.
+
 Register with the ST site, download the application and run the updater:
 
     $ cd Downloads
