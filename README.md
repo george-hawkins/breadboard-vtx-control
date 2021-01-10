@@ -33,13 +33,13 @@ Plug a USB cable into the ST-LINK connector (plugging it into the other one does
 
 The board comes with a pre-installed example application that will flash the red user LED madly, press the button labeled _USER_ to get it to cycle through the other user LEDs.
 
-### Update the ST-LINK firmware
+### Upgrade the ST-LINK firmware
 
-Find the latest ST-LINK updater under the [products section](https://www.st.com/en/development-tools/stm32-programmers.html#products) of STM32 Programmers page. At the time of writing, it was [STWS-LINK007](https://www.st.com/en/development-tools/stsw-link007.html).
+Find the latest ST-LINK upgrader under the [products section](https://www.st.com/en/development-tools/stm32-programmers.html#products) of STM32 Programmers page. At the time of writing, it was [STWS-LINK007](https://www.st.com/en/development-tools/stsw-link007.html).
 
-Aside: ST's package naming is quite odd, e.g. at the present time STWS-LINK007 is a package for updating the firmware of an ST-LINK device while STSW-LINK009, which sounds like a more recent revision of the same, is in fact a package for the USB drivers needed by Windows to work with an ST-LINK device.
+Aside: ST's package naming is quite odd, e.g. at the present time STWS-LINK007 is a package for upgrading the firmware of an ST-LINK device while STSW-LINK009, which sounds like a more recent revision of the same, is in fact a package for the USB drivers needed by Windows to work with an ST-LINK device.
 
-Register with the ST site, download the application and run the updater:
+Register with the ST site, download the application and run the upgrader:
 
     $ cd Downloads
     $ unzip en.stsw-link007_V2-37-26.zip 
@@ -54,6 +54,8 @@ Note: if you've got the Arduino IDE installed, it includes a version of Java tha
 `sudo` is required so that the application can open USB devices. Once started, the GUI should detect the board, click the _Open in update mode_ and click _Upgrade_ if the _Version_ shown isn't the same as the one shown for _Update to Firmware_.
 
 ![STLinkUpgrade](stlinkupgrade.png)
+
+Note: the ST-LINK upgrader is bundled with the [STM32CubeIDE](https://www.st.com/en/development-tools/stm32cubeide.html) (along with a suitable JRE) - once you've installed and started the IDE, you can find the upgrader as _ST-LINK Upgrade_ in the _Help_ menu.
 
 Installing Betaflight
 ---------------------
@@ -113,6 +115,8 @@ Now install the hex file on the board - this simply requires copying it to the b
     $ cp obj/betaflight_4.2.5_NUCLEOF722_afdac08b3.hex /media/$USER/NODE_F722ZE
 
 The drive unmounts and remounts. After remounting and going through a boot sequence, the board's red and green LEDs are lit and the blue LED flashes on and off.
+
+Note: sometimes the `cp` completes without any obvious error but Betaflight then doesn't even start its boot process (no LEDs come on at all) - plugging the board in and out and redoing the copy fixes things.
 
 ### Using Docker to build Betaflight
 
@@ -229,6 +233,13 @@ Aside: when using the Configurator, it should be fine to make changes on multipl
 
 Note: Oscar mentions settings in the _Receiver_ section of _Configuration_ but for this setup they already had the appropriate values.
 
+TODO: note that they're already setup because target.h specifies:
+
+```
+#define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
+#define SERIALRX_PROVIDER       SERIALRX_SBUS
+```
+
 Binding the RX 
 --------------
 
@@ -273,9 +284,7 @@ Note: SoftSerial port number starts from 11, `SERIAL_TX 11` being SoftSerial #1 
 
 Once it has rebooted and you've reconnected go to the _Configuration_ tab and under _Other Features_ turn on _SOFTSERIAL_ and _Telemetry_.
 
-After _Save and Reboot_ go to _Ports_ and _SOFTSERIAL1_ should now be there (if not go to the `tlm_halfduplex` section of Oscar's guide, at this stage, I'm not sure if I had to actively change anything related to this).
-
-TODO: reset all parameters and re-setup SoftSerial and see if `tlm_halfduplex` has to be changed - I doubt it.
+After _Save and Reboot_ go to _Ports_ and _SOFTSERIAL1_ should now be there (Oscar's guide suggest further steps if _SOFTSERIAL1_ does not show up but these were not necessary).
 
 Now, set the _Telemetry Output_ value for _SOFTSERIAL1_ to _SmartPort_ and _Save and Reboot_.
 
@@ -293,16 +302,18 @@ After a lot of experimenting, I finally got telemetry working by going to the _C
     # set tlm_halfduplex=ON
     # save
 
+It turns out that these are actually the default values and it was changing them (according to the instructions of various online tutorials) that had caused my problems.
+
 After this, I could go to the _TELEMETRY_ page for my model, on my transmitter, and select _Discover new sensors_. In addition to RSSI and RxBt (which come directly from the RX and are available even if telemetry hasn't been set up as described above), it discovered an array of additional sensors - i.e. all those listed [here](https://github.com/betaflight/betaflight/blob/master/docs/Telemetry.md#available-sensors) for Betaflight.
 
-Note: the setting `tlm_inverted` seems a little confusing. The S.PORT signal is an inverted serial signal and F3 and F7 STM32 MPUs can handle this inversion but MPUs like the F4 require and external inverter. So `tlm_inverted` is not about the inverted nature of the underlying S.PORT signal but about whether it has been inverted again (to become uninverted) by an external inverter. For this F7 based board an external inverter is unnecessary so `tlm_inverted` is set to `OFF`.
+Note: the setting `tlm_inverted` seems a little confusing. The S.PORT signal is an inverted serial signal and F3 and F7 STM32 MCUs can handle this inversion but MCUs like the F4 require and external inverter. So `tlm_inverted` is not about the inverted nature of the underlying S.PORT signal but about whether it has been inverted again (to become uninverted) by an external inverter. For this F7 based board an external inverter is unnecessary so `tlm_inverted` is set to `OFF`.
 
 Hardware UART pins
 ------------------
 
 You can skip over this section, it just covers my experimentation with hardware UART pins.
 
-With an MPU like the ESP32, almost every pin can be used as a UART pin. However, with this STM32 MPU, you don't appear to have much (any?) freedom when it comes to to assigning pins to UARTs. I couldn't work out the scheme to what is and isn't allowed.
+With an MCU like the ESP32, almost every pin can be used as a UART pin. However, with this STM32 MCU, you don't appear to have much (any?) freedom when it comes to to assigning pins to UARTs. I couldn't work out the scheme to what is and isn't allowed.
 
 In `target.h` various pins are assigned to UARTs 5, 6, 7 and 8 but those UARTs are not actually enabled.
 
@@ -310,13 +321,20 @@ Of the pins assigned to those UARTs, only pins PE8 (TX) and PE7 (RX) of UART7 an
 
 Of the UARTs that are actually enabled, i.e. UART2, UART3 and UART4, only pins PD6 (RX) and PD5 (TX) of UART2 and pin PA0 (TX) of UART4 are exposed.
 
-I could use the RX and TX pins of UART2 and the TX pin of UART4 without issue. However, I could not e.g. use PE8 by reassigning it to UART3. This _may_ be because UART3 is used for ST-LINK (search for _USART3_ in the F722ZE manual) - this assumes there's some connection between Betaflight's UART numbering and the devices of the MPU but I don't believe there is.
+I could use the RX and TX pins of UART2 and the TX pin of UART4 without issue. However, I could not e.g. use PE8 by reassigning it to UART3. This _may_ be because UART3 is used for ST-LINK (search for _USART3_ in the F722ZE manual) - this assumes there's some connection between Betaflight's UART numbering and the devices of the MCU but I don't believe there is.
+
+**Update:**
+
+* "This _may_ be because UART3 is used for ST-LINK" - this isn't the issue, the issue is that the pins must be defined in `target.h` (see below for more details).
+* "this assumes there's some connection between Betaflight's UART numbering and the devices of the MCU but I don't believe there is." - I was incorrect, there is a one-to-one correspondance between the numbering in Betaflight and the devices of the MCU.
 
 I also tried reassigning UART4 TX to other pins but this didn't work either.
 
 In the manual's _Hardware layout and configuration_ section for the F722ZE, the pins PD6 and PD5 are described as being the RX and TX pins of _USART_2_ and indeed are used as the RX and TX pins of UART2 in `target.h`.
 
 However, the only other pins described as _USART_ pins, in the manual, are PG14 (TX) and PG9 (RX) for _USART6_ (notice the inconsistent naming _USART_2_ vs _USART6_) and these pins are out of bounds to the Betaflight CLI as it doesn't recognise pin names above F15.
+
+**Update:** it turns out that the range of pins that Betaflight recognises for a particular target is controlled by the `TARGET_IO_PORTA` etc. defines in the target's `target.h` file, the NUCLEOF722 target simply has no `TARGET_IO_PORTG` define, so G pins are not recognised.
 
 The PA0 pin, i.e. UART4 TX, is not described as a UART pin in the F722ZE manual - there it's described as having signal name `TIMER_C_PWM1` and function `TIM2_CH1`.
 
@@ -327,6 +345,12 @@ I tried reassigning PA0 to UART3, but it doesn't work there. And I tried assigni
 One might imagine that despite seeming to be able to set `resource` values for UARTs via the CLI that this doesn't actually change anything. However, this is not the case - changes to UART pins via `resource` do affect things, e.g. if you assign PA0 to UART3 but leave _SmartPort_ set for UART4 (and nothing set for UART3), it's not the case that things keep on working, i.e. it's not that under the covers UART4 is still really using PA0 as if it hadn't been reassigned to UART3.
 
 So what exactly the rules are here is quite unclear.
+
+**Update:** pins that are going to be used for motors, ppm, pwn and other purposes (e.g. soft serial) have to be defined in the `timerHardware` table in the target's `target.c` file. UART pins do _not_ have to be defined in this file but perhaps they do have to have been specified as UART pins (with `#define UART2_RX_PIN` etc.), for an enabled UART, for them to be configured such that they're really useable. I.e. you can't just use arbitrary pins names via the CLI that were not in some way configured in the compiled code.
+
+**Update 2:** it turns out you are not free to reassign UART pins via the CLI `resource` command. You must define the pins in `target.h` and you must use the appropriate pins defined in the MCU's datasheet, e.g. <https://www.st.com/resource/en/datasheet/stm32f722ze.pdf> for the STM32F722ZE. For each UART between one and four pins are specified for the RX pin and for the TX pin, you can choose between any of the specified pins for a paricular UART. Often there seems to be a natural grouping, e.g. PD6 and PD5 are RX and TX pins respectively that can be used for UART2, however, this apparent grouping isn't important - e.g. PA3 is another option for the RX pin and it can be used in combination with PD5 as the TX pin. The UART names in the Betaflight code do (and must) match those in the MCU datasheet, e.g. `UART2_RX_PIN` in Betaflight can only be assigned values that are specified as RX pins for UART2 in the datasheet.
+
+**Update 3:** rather than looking at the MCU datasheet, you can find the legal pin options in `src/main/drivers/serial_uart_stm32f7xx.c` (or the appropriate file for your MCU).
 
 Telemetry on a hardware UART TX pin
 -----------------------------------
@@ -387,6 +411,8 @@ It looks like, in the EU, you can't have frequencies below around 5732 and above
 
 I reduced the number of bands to 5 (and then pressed _Save_) to knock out the I band that isn't mentioned in the TX805 mini-manual. Other than that everything lined up with the table of frequencies in the manual.
 
+By default there's only a 25mW power level, under the bands in the _VTX Table_ section, you can add additional power levels if your VTX supports them (and they're legal in your jurisdiction).
+
 Note: Oscar Liang sets up the VTX table using the CLI - I don't see the need for this as the file based approach works well.
 
 Aside: under _Video Transmitter_ tab, you can select _Save LUA Script_ which saves a file, that describes the frequencies table, which can, apparently, be loaded into OpenTX. However, I don't know why you would do this as the Betaflight script on the transmitter can download this table itself from the flight controller via the RX using the MSP protocol.
@@ -408,6 +434,8 @@ SmartAudio uses a significantly lower bitrate than the two FrSky protocols - so 
 
 Transmitter setup
 -----------------
+
+TODO: important - the Betaflight scripts depend on telemetry as the channel for data from the flight controller to the TX. If you haven't already discovered all the sensors (as described above when discussing the _TELEMETRY_ page) then the Betaflight scripts will continuously flash a _No Telemetry_ warning (it actually just checks for the _RSSI_ sensor and assumes if its not present then no telemetry is present - this is odd as the RSSI sensor data comes from the RX rather than the flight controller).
 
 Assuming you've got your transmitter and receiver upgraded to the latest OpenTX firmware releases (in the case of the transmitter and its bootloader) and FrSky firmware releases (in the case of the receiver and the transmitter's internal radio module) then, following the Betaflight TX Lua Scripts [instructions](https://github.com/betaflight/betaflight-tx-lua-scripts#installing), you just need to:
 
@@ -479,6 +507,37 @@ Notes
 -----
 
 Miscellaneous notes related to various things above.
+
+### Full chip erase
+
+If you get your board into a state where you can no longer connect to it via the Betaflight Configurator you can do a full chip erase and then copy a known good firmware onto the board.
+
+You can do a full chip erase (and lots of other things) with the [STM32CubeProgrammer](https://www.st.com/en/development-tools/stm32cubeprog.html). Download and install it (`sudo` is not needed):
+
+```
+$ cd ~/Downloads
+$ mkdir en.stm32cubeprg-lin_v2-6-0
+$ cd en.stm32cubeprg-lin_v2-6-0
+$ unzip ../en.stm32cubeprg-lin_v2-6-0.zip 
+$ ./SetupSTM32CubeProgrammer-2.6.0.linux 
+```
+
+Note: it asks you if you want to install entries for it in your Start Menu and on your Desktop - but the Linux version installed files that I think are intended for Ubuntu Unity, which is pointless on a modern Ubuntu release running Gnome.
+
+To run it you have to be in the programmer's `bin` directory (otherwise it can't connect and you get an "Unable to list supported devices" error, the solution of being in the `bin` directory comes from this forum [answer](https://community.st.com/s/question/0D53W00000FQK5vSAH/stm32cubeprogrammer-unable-to-list-supported-devices)). So:
+
+```
+$ cd ~/STMicroelectronics/STM32Cube/STM32CubeProgrammer/bin
+$ ./STM32CubeProgrammer
+```
+
+Then click _Connect_ to connect to the board and then press _Full chip erase_ (it's just above the help icon that's bottom-left). Click the hamburger icon (top-left) so see full names for the various icons along the left-hand side. There's also a _Full chip erase_ button in the _Erasing & programming_ tab.
+
+Note: there's also something called `cubeprogrammer` bundled with the STM32CubeIDE but I don't know how or if one can access it directly or if it just provides the programmer functionality used when you run programs on your device. Your can find it like so:
+
+    $ ls /opt/st/stm32cubeide_*/plugins/*cubeprogrammer*.jar
+
+It's not an executable jar.
 
 ### Creating a udev rule for the Nucleo board
 
