@@ -118,6 +118,8 @@ The drive unmounts and remounts. After remounting and going through a boot seque
 
 Note: sometimes the `cp` completes without any obvious error but Betaflight then doesn't even start its boot process (no LEDs come on at all) - plugging the board in and out and redoing the copy fixes things.
 
+TODO: see if you can instead use the prebuilt STM32F7X2 universal target that Betaflight now releases (e.g. `betaflight_4.2.6_STM32F7X2.hex` [here](https://github.com/betaflight/betaflight/releases/tag/4.2.6) in the 4.2.6 release). It might even be an improvement given the odd invalid UART3 pin definitions in the NUCLEOF722 - one would instead define all UARTs as required using the CLI `resource` command.
+
 ### Using Docker to build Betaflight
 
 An alternative to having to set up a suitable development environment, is to install and use [Docker](https://docs.docker.com/engine/install/).
@@ -211,6 +213,10 @@ You can find how pins are assigned for a particular Betaflight target in its `ta
     #define UART2_TX_PIN PD5
 
 So the UART2 RX and TX pins are PD6 and PD5 respectively. If you look at the pinout diagram in the user manual (or the one that came in the board's blister pack), you'll find these pins near the top-right of the CN9 header.
+
+Note: STM produce a very wide range of Nucleo boards but only some of them are listed on the Mbed boards [page](https://os.mbed.com/platforms/?q=&Board+vendor=STMicroelectronics). Those that are, do have nice pinout diagrams, e.g. see the Mbed pages for the [Nucleo-F746ZG](https://os.mbed.com/platforms/ST-Nucleo-F746ZG/) and the [Nucleo-F767ZI](https://os.mbed.com/platforms/ST-Nucleo-F767ZI/). Unforunately, unlike the Nucleo-F722ZE that I've used here, neither of these boards has an existing Betaflight target definition. A Nucleo board that has both a Betaflight target definition and an Mbed page is the [Nucleo-H743ZI2](https://os.mbed.com/platforms/ST-Nucleo-H743ZI2/).
+
+I've copied out the pins on Zio headers, from the Nucleo-F722ZE manual, into [`notes/nucleo-f722ze-zio-header.md`](notes/nucleo-f722ze-zio-header.md) - this makes it more convenient to search for the location of a particular pin.
 
 Setting up the RX
 -----------------
@@ -352,6 +358,8 @@ So what exactly the rules are here is quite unclear.
 
 **Update 3:** rather than looking at the MCU datasheet, you can find the legal pin options in `src/main/drivers/serial_uart_stm32f7xx.c` (or the appropriate file for your MCU).
 
+TODO: there's a section on UARTs in [`notes/betaflight.md`](notes/betaflight.md) - it should be merged with this section and the whole thing cleaned up.
+
 Telemetry on a hardware UART TX pin
 -----------------------------------
 
@@ -488,6 +496,8 @@ Conclusion
 ----------
 
 That's it. Now, you can control the VTX via the transmitter. The following sections are just some additional documentation and notes.
+
+There are also further notes in the [`notes`](notes) subdirectory.
 
 X8R ports
 ---------
